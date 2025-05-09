@@ -19,9 +19,9 @@
         </nav>
     </header>
     <main>
-        <section class="search">
-            <form action="/search" method="GET">
-                <input type="text" name="query" placeholder="제목 및 내용 검색">
+         <section class="search">
+                <form action="{{url_for('index')}}" method="GET">
+                        <input type="text" name="query" placeholder="제목 검색" value="{{query or ''}}">
                 <button type="submit">검색</button>
             </form>
         </section>

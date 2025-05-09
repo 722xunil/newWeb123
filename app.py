@@ -56,15 +56,25 @@ app.register_blueprint(auth_bp)
 
 @app.route("/")
 def index():
-    posts = query_db("SELECT id, title, content, author, date_created FROM bulletin_board ORDER BY date_created DESC")
+    query = request.args.get('query', '')  # GET 방식으로 전달된 검색어
     user = get_user()
+    if query:
+        posts = query_db(
+            "SELECT id, title, content, author, date_created FROM bulletin_board WHERE title LIKE ? ORDER BY date_created DESC",
+            ('%' + query + '%',)
+        )
+    else:
+        posts = query_db(
+            "SELECT id, title, content, author, date_created FROM bulletin_board ORDER BY date_created DESC"
+        )
     new_posts = []
     for post in posts:
-        post_dict = dict(post)  # sqlite3.Row 객체를 딕셔너리로 변환
-        post_dict['date_created'] = datetime.strptime(post_dict['date_created'], '%Y-%m-%d %H:%M:%S') if post_dict['date_created'] else None
+        post_dict = dict(post)
+        if post_dict['date_created']:
+            post_dict['date_created'] = datetime.strptime(post_dict['date_created'], '%Y-%m-%d %H:%M:%S')
         new_posts.append(post_dict)
-    return render_template("index.html", posts=new_posts, user=user)
-
+    return render_template("index.html", posts=new_posts, user=user, query=query)
+    
 @app.route("/create", methods=["GET", "POST"])
 def create():
     user = get_user()
