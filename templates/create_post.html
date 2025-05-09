@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"> 
     <title>게시글 작성</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -10,7 +10,7 @@
         <h1>게시글 작성</h1>
     </header>
     <main>
-        <form action="/create" method="POST" enctype="multipart/form-data"> <!-- 🔥 중요 -->
+        <form action="/create" method="POST" enctype="multipart/form-data"> <!-- 🔥 파일 업로드를 위한 enctype 설정 -->
             <label for="title">제목:</label>
             <input type="text" id="title" name="title" required>
             <br>
@@ -20,12 +20,13 @@
             <textarea id="content" name="content" rows="10" required></textarea>
             <br>
 
-            <!-- 로그인한 유저 기준이면 필요 없음 -->
+            <!-- 로그인한 유저 기준이라면 "작성자" 항목은 필요 없지만, 예시로 남겨둡니다 -->
             <label for="author">작성자:</label>
             <input type="text" id="author" name="author" required>
             <br>
 
-            <label for="file">파일 첨부:</label>  <!-- 🔥 파일 업로드 추가 -->
+            <!-- 🔥 파일 첨부 입력 추가 -->
+            <label for="file">파일 첨부:</label>
             <input type="file" id="file" name="file">
             <br>
 

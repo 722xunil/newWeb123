@@ -1,9 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, g
 import sqlite3
 from datetime import datetime
+from werkzeug.utils import secure_filename
 import os
 
 app = Flask(__name__)
+
+# 파일 업로드 설정
+UPLOAD_FOLDER = 'uploads'  # 파일을 저장할 폴더
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip'}  # 허용할 파일 확장자
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = 'your_secret_key'
+
+# 허용된 파일 확장자인지 확인하는 함수
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # 데이터베이스 설정
 DATABASE = "bulletin_board.db"
@@ -77,7 +91,7 @@ def index():
     
 @app.route("/create", methods=["GET", "POST"])
 def create():
-    user = get_user()
+    user = get_user()  # 현재 로그인된 유저 정보 가져오기
     if not user:
         flash("로그인 후 게시글을 작성할 수 있습니다.")
         return redirect(url_for("auth.login"))
@@ -87,10 +101,25 @@ def create():
         content = request.form["content"]
         author = user['username']
 
-        query = f"INSERT INTO bulletin_board (title, content, author) VALUES ('{title}', '{content}', '{author}')"
-        execute_db(query)
-        return redirect(url_for("index"))
+        # 파일이 첨부된 경우
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and allowed_file(file.filename):  # 허용된 파일인지 확인
+                filename = secure_filename(file.filename)  # 파일명 안전하게 변경
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)  # 파일 저장 경로
+                file.save(file_path)  # 파일 저장
+            else:
+                file_path = None
+        else:
+            file_path = None
 
+        # 게시글 데이터베이스에 저장 (파일 경로 포함)
+        query = f"INSERT INTO bulletin_board (title, content, author, file_path) VALUES ('{title}', '{content}', '{author}', '{file_path}')"
+        execute_db(query)
+
+        flash("게시글이 등록되었습니다!")
+        return redirect(url_for("index"))
+   
     return render_template("create_post.html")
 
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
@@ -132,7 +161,7 @@ def delete_post(id):
 
 @app.route("/post/<int:post_id>")
 def view_post(post_id):
-    post = query_db("SELECT id, title, content, author, date_created FROM bulletin_board WHERE id = ?", (post_id,), one=True)
+    post = query_db("SELECT id, title, content, author, date_created, file_path FROM bulletin_board WHERE id = ?", (post_id,), one=True)
     comments = query_db("SELECT id, content, author, date_created, parent_id FROM comment WHERE post_id = ? AND parent_id IS NULL", (post_id,))
     user = get_user()
     return render_template("post.html", post=post, comments=comments, user=user)
@@ -192,7 +221,8 @@ def delete_comment(comment_id):
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOADED_FILES_DEST'], filename)
+    # 'uploads' 디렉토리에서 파일을 반환
+    return send_from_directory(os.path.join(app.root_path, 'uploads'), filename)
 
 @app.route("/download/<filename>")
 def download_image(filename):

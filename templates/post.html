@@ -24,11 +24,11 @@
             <div class="post-content">
                 {{ post['content'] | replace('\n', '<br>') | safe }}
                 {% if post['file_path'] %}
-                    <div class="attached-file">
-                        <p>첨부파일:</p>
-                        <iframe src="{{ url_for('download_image', filename=post['file_path']) }}" width="100%" height="400px" style="border:1px solid #ccc;"></iframe>
-                    </div>
-                {% endif %}
+    <a href="{{ url_for('uploaded_file', filename=post['file_path'].replace('\\', '/')) }}" download>파일 다운로드</a>
+{% else %}
+    <p>첨부된 파일이 없습니다.</p>
+{% endif %}
+
 
             </div>
             <div class="post-actions">
